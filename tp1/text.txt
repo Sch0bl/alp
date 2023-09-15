@@ -1,0 +1,73 @@
+intexp ::= nat | var | −u intexp | var = intexp
+       | intexp + intexp
+       | intexp , intexp
+       | intexp −b intexp
+       | intexp × intexp
+       | intexp ÷ intexp
+
+boolexp ::= true | false
+       | intexp == intexp
+       | intexp 6= intexp
+       | intexp < intexp
+       | intexp > intexp
+       | boolexp ∧ boolexp
+       | boolexp ∨ boolexp
+       | ¬ boolexp
+
+comm ::= skip
+       | var := intexp 
+       | comm; comm
+       | if boolexp then comm else comm
+       | repeat comm until boolexp
+
+Concret syntax (de-ambiguos)
+
+digit ::= '0' | '1' | ... | '9'
+
+letter ::= 'a' | ... | 'Z'
+
+nat ::= digit | digit nat
+
+var ::= letter | letter var
+
+intexp ::= intexp ',' intexp1
+       | intexp1
+
+intexp1 ::= var '=' intexp2
+        | intexp2
+
+intexp2 ::= intexp2 '+' intexp3 
+        |   intexp2 '-' intexp3 
+        |   intexp3 
+
+intexp3 ::= intexp3 '/' intexp4 
+        |   intexp3 '*' intexp4 
+        |   intexp4 
+
+intexp4 ::= '-' intexp5
+
+intexp5 ::= '(' intexp0 ')'
+        |   var
+        |   nat
+
+boolexp0 ::= boolexp0 '||' boolexp1
+         |   boolexp1
+
+boolexp1 ::= boolexp1 '&&' boolexp2
+         |   boolexp2
+
+boolexp2 ::= '!' boolexp3
+
+boolexp3 ::= intexp0 '==' intexp0 
+         |   intexp0 '!=' intexp0
+         |   intexp0 '<' intexp0
+         |   intexp0 '>' intexp0
+
+comm0 ::= comm0 ';' comm1
+      |   comm1
+      
+comm1 ::= skip 
+      |   var '=' intexp
+      |   'if' boolexp  '{' comm '}'
+      |   'if' boolexp  '{' comm '}' 'else' '{' comm '}'
+      |   'repeat' comm 'until' boolexp 'end'
