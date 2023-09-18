@@ -7,7 +7,7 @@ intexp ::= nat | var | −u intexp | var = intexp
 
 boolexp ::= true | false
        | intexp == intexp
-       | intexp 6= intexp
+       | intexp != intexp
        | intexp < intexp
        | intexp > intexp
        | boolexp ∧ boolexp
