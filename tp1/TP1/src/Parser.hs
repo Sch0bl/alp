@@ -49,8 +49,8 @@ seqExp :: Parser (Exp Int -> Exp Int -> Exp Int)
 seqExp = do reservedOp lis ","
             return ESeq
 
-varExp :: Parser (Exp Int)
-varExp = do
+assgExp :: Parser (Exp Int)
+assgExp = do
   var <- identifier lis  
   reservedOp lis "="
   e <- intexp2
@@ -77,35 +77,42 @@ umExp = do reservedOp lis "-"
            e <- intexp5
            return (UMinus e)
 
+consExp :: Parser (Exp Int)
+consExp = do nat <- natural lis
+             return (Const (fromIntegral nat))
+
+varExp :: Parser (Exp Int)
+varExp = do var <- identifier lis
+            return (Var var)
+
 intexp0 :: Parser (Exp Int)
 intexp0 = chainl1 intexp1 seqExp
 
 intexp1 :: Parser (Exp Int)
-intexp1 = try varExp <|> intexp2
+intexp1 = (try assgExp) <|> intexp2
+
 
 intexp2 :: Parser (Exp Int)
-intexp2 = chainl1 intexp3 plusExp 
-          <|> 
-          chainl1 intexp3 minusExp
+intexp2 = chainl1 intexp3 (minusExp <|> plusExp)
+          -- <|> 
+          -- intexp3
 
 intexp3 :: Parser (Exp Int)
-intexp3 = chainl1 intexp4 timesExp 
-          <|> 
-          chainl1 intexp4 divExp
+intexp3 = chainl1 intexp4 (timesExp <|> divExp)
+          -- <|> 
+          -- intexp4
 
 intexp4 :: Parser (Exp Int)
-intexp4 = try umExp 
+intexp4 = umExp 
           <|>
           intexp5
 
 intexp5 :: Parser (Exp Int)
 intexp5 = parens lis intexp0
           <|>
-          do nat <- natural lis
-             return (Const (fromIntegral nat))
+          varExp
           <|> 
-          do var <- identifier lis
-             return (Var var)
+          consExp
           
 intexp :: Parser (Exp Int)
 intexp = intexp0
@@ -126,60 +133,62 @@ notBool = do reservedOp lis "!"
              be <- boolexp3
              return (Not be)
 
-eqBool :: (Exp Int) -> Parser (Exp Bool)
-eqBool e = do reservedOp lis "=="
-              ie <- intexp
-              return (Eq e ie)
+eqBool :: Parser (Exp Int -> Exp Bool)
+eqBool = do reservedOp lis "=="
+            ie <- intexp
+            return (\x ->(Eq x ie))
 
-neqBool :: (Exp Int) -> Parser (Exp Bool)
-neqBool e = do reservedOp lis "!="
-               ie <- intexp
-               return (NEq e ie)
+neqBool :: Parser (Exp Int -> Exp Bool)
+neqBool = do reservedOp lis "/="
+             ie <- intexp
+             return (\x -> (NEq x ie))
 
-ltBool :: (Exp Int) -> Parser (Exp Bool)
-ltBool e = do reservedOp lis "<"
-              ie <- intexp
-              return (Lt e ie)
+ltBool :: Parser (Exp Int -> Exp Bool)
+ltBool = do reservedOp lis "<"
+            ie <- intexp
+            return (\x -> (Lt x ie))
 
-gtBool :: (Exp Int) -> Parser (Exp Bool)
-gtBool e = do reservedOp lis ">"
-              ie <- intexp
-              return (Gt e ie)
+gtBool :: Parser (Exp Int -> Exp Bool)
+gtBool = do reservedOp lis ">"
+            ie <- intexp
+            return (\x -> (Gt x ie))
 
 trueBool :: Parser (Exp Bool)
-trueBool = do return BTrue
+trueBool = do reserved lis "true"
+              return BTrue
 
 falseBool :: Parser (Exp Bool)
-falseBool = do return BFalse
+falseBool = do  reserved lis "false"
+                return BFalse
 
 boolexp0 :: Parser (Exp Bool)
-boolexp0 = try (chainl1 boolexp1 orBool)
-           <|>
-           boolexp1
+boolexp0 = chainl1 boolexp1 orBool
+           -- <|>
+           -- boolexp1
 
 boolexp1 :: Parser (Exp Bool)
-boolexp1 = chainl1 boolexp1 andBool
+boolexp1 = chainl1 boolexp2 andBool
+           -- <|>
+           -- boolexp2
 
 boolexp2 :: Parser (Exp Bool)
 boolexp2 = try notBool
            <|> 
            boolexp3
 
+parase :: Parser (Exp Bool)
+parase = do ie1 <- intexp
+            f <- gtBool <|> ltBool <|> eqBool <|> neqBool 
+            return $ f ie1
+
 boolexp3 :: Parser (Exp Bool)
-boolexp3 = do ie1 <- try intexp
-              (try (eqBool ie1) 
-               <|>
-               try (neqBool ie1)
-               <|> 
-               try (ltBool ie1)
-               <|> 
-               try (gtBool ie1))
+boolexp3 = try parase
            <|>
            parens lis boolexp0
            <|>
-           try trueBool
+           trueBool
            <|>
-           try falseBool
+           falseBool
 
 boolexp :: Parser (Exp Bool)
 boolexp = boolexp0
@@ -213,12 +222,13 @@ iteComm = do reserved lis "if"
          
 ruComm :: Parser Comm
 ruComm = do reserved lis "repeat" 
-            cm <- comm
+            cm <- braces lis comm
             reserved lis "until"
             be <- boolexp
             return (Repeat cm be)
 
-
+comm :: Parser Comm
+comm = comm0
 
 comm0 :: Parser Comm
 comm0 = chainl1 comm1 seqComm
@@ -226,16 +236,13 @@ comm0 = chainl1 comm1 seqComm
         comm1
 
 comm1 :: Parser Comm
-comm1 = try skipComm 
+comm1 = skipComm 
         <|>
-        try letComm 
+        letComm 
         <|> 
-        try iteComm
+        iteComm
         <|> 
-        try ruComm
-
-comm :: Parser Comm
-comm = comm0
+        ruComm
 
 ------------------------------------
 -- Función de parseo

@@ -7,6 +7,7 @@ where
 import           AST
 import qualified Data.Map.Strict               as M
 import           Data.Strict.Tuple
+import           Data.Maybe                    (fromJust)
 
 -- Estados
 type State = M.Map Variable Int
@@ -19,7 +20,7 @@ initState = M.empty
 -- Busca el valor de una variable en un estado
 -- Completar la definición
 lookfor :: Variable -> State -> Int
-lookfor v s = Just (M.lookup v s) 
+lookfor v s = fromJust (M.lookup v s) 
 
 -- Cambia el valor de una variable en un estado
 -- Completar la definición
@@ -76,7 +77,7 @@ evalExp (EAssgn v ei) s = let (a :!: b) = (evalExp ei s)
 evalExp BTrue s = (True :!: s)
 evalExp BFalse s = (False :!: s)
 evalExp (Not ei) s =  let (a :!: b) = (evalExp ei s)
-                      in (!a :!: b)
+                      in (not a :!: b)
 --evalExp (Eq e0 e1) s =  let (a1 :!: b1) = (evalExp e0 s)
 --                            (a2 :!: b2) = (evalExp e1 b1)
 --                        in (a1 == a2 :!: b2)
@@ -97,20 +98,25 @@ evalExp (Not ei) s =  let (a :!: b) = (evalExp ei s)
 --evalExp (And e0 e1) s = let (a1 :!: b1) = (evalExp e0 s)
 --                            (a2 :!: b2) = (evalExp e1 b1)
 --                        in (a1 && a2 :!: b2)
-evalExp (cons e0 e1) s =
-  let f op =  let (a1 :!: b1) = (evalExp e0 s)
-                  (a2 :!: b2) = (evalExp e1 b1)
-              in (op a1 a2 :!: b2)
+evalExp cons s =
+  -- let f op e e' = let (a1 :!: b1) = (evalExp e0 s)
+  --                     (a2 :!: b2) = (evalExp e1 b1)
+  --                 in (op a1 a2 :!: b2)
+  let
+  -- f :: (a -> a -> c) -> (Exp a) -> (Exp a) -> State -> Pair c State
+  f op e e' s = let (a1 :!: b1) = (evalExp e s)
+                    (a2 :!: b2) = (evalExp e' b1)
+                in (op a1 a2 :!: b2)
   in case cons of 
-      Plus  -> f (+)
-      Minus -> f (-)
-      Times -> f (*)
-      Div   -> f (div)
-      ESeq -> f (\ x y -> y)
+      (Plus e0 e1)  -> f (+) e0 e1 s
+      (Minus e0 e1) -> f (-) e0 e1 s
+      (Times e0 e1) -> f (*) e0 e1 s
+      (Div e0 e1)   -> f (div) e0 e1 s
+      (ESeq e0 e1)  -> f (\ x y -> y) e0 e1 s
       ----------------
-      Eq    -> f (==)
-      NEq   -> f(!=)
-      Lt    -> f(<)
-      Gt    -> f(>)
-      Or    -> f(||)
-      And   -> f(&&)
+      (Eq e0 e1)    -> f (==) e0 e1 s
+      (NEq e0 e1)   -> f (/=) e0 e1 s
+      (Lt e0 e1)    -> f (<) e0 e1 s
+      (Gt e0 e1)    -> f (>) e0 e1 s
+      (Or e0 e1)    -> f (||) e0 e1 s
+      (And e0 e1)   -> f (&&) e0 e1 s
