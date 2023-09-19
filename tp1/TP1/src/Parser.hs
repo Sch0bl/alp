@@ -94,13 +94,9 @@ intexp1 = (try assgExp) <|> intexp2
 
 intexp2 :: Parser (Exp Int)
 intexp2 = chainl1 intexp3 (minusExp <|> plusExp)
-          -- <|> 
-          -- intexp3
 
 intexp3 :: Parser (Exp Int)
 intexp3 = chainl1 intexp4 (timesExp <|> divExp)
-          -- <|> 
-          -- intexp4
 
 intexp4 :: Parser (Exp Int)
 intexp4 = umExp 
@@ -215,7 +211,7 @@ iteComm = do reserved lis "if"
              be <- boolexp
              cm <- braces lis comm
              (do reserved lis "else"
-                 cme <- comm
+                 cme <- braces lis comm
                  return (IfThenElse be cm cme)
                  <|>
                  return (IfThenElse be cm Skip))
@@ -238,9 +234,9 @@ comm0 = chainl1 comm1 seqComm
 comm1 :: Parser Comm
 comm1 = skipComm 
         <|>
-        letComm 
+        try letComm 
         <|> 
-        iteComm
+        try iteComm
         <|> 
         ruComm
 
