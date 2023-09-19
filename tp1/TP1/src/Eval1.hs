@@ -97,7 +97,7 @@ evalExp cons s =
 t2 :: State
 t2 = update "x" 4 (update "y" 5 (update "z" 6 (update "x'" 4 initState)))
 
-ituple1 :: Pair Int State
+--ituple1 :: Pair Int State
 ituple1 = evalExp (Var "x") t2
 ituple2 = evalExp (Const 45) t2
 ituple3 = evalExp (UMinus (Var "y")) t2
