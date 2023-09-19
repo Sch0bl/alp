@@ -5,6 +5,9 @@ import Control.Applicative hiding (many)
 
 type HetLists = ([Int],String)
 
+data CharInt = C Char | I Int
+type HeteroList = [CharInt]
+
 charSep :: Char -> Parser ()
 charSep c = do many (char c)
                return ()
