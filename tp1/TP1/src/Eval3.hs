@@ -85,37 +85,43 @@ evalExp (EAssgn v ei) s =
     Left err -> Left err
 
 evalExp cons s =
-  let f op e e' s = 
-        case (evalExp e s) of
-          Right (a1 :!: b1) ->  
-            case (evalExp e' b1) of
-              Right (a2 :!: b2) -> Right (op a1 a2 :!: b2)
-              Left err -> Left err 
-          Left err -> Left err 
-      g op e s = 
-        case (evalExp e s) of
-          Right (a :!: b) -> Right (op a :!: b)
-          Left err -> Left err 
-      h e e' s =
-        case (evalExp e s) of
-          Right (a1 :!: b1) -> 
-            case (evalExp e' s) of
-              Right (0 :!: b2)  -> Left DivByZero 
-              Right (a2 :!: b2) -> Right (div a1 a2 :!: b2)
-              Left err -> Left err
-          Left err -> Left err
-  in case cons of 
-      (Plus e0 e1)  -> f (+) e0 e1 s
-      (Minus e0 e1) -> f (-) e0 e1 s
-      (Times e0 e1) -> f (*) e0 e1 s
-      (Div e0 e1)   -> h e0 e1 s
-      (ESeq e0 e1)  -> f (\ x y -> y) e0 e1 s
-      (UMinus e)    -> g (\x -> -x) e s
-      ----------------
-      (Eq e0 e1)    -> f (==) e0 e1 s
-      (NEq e0 e1)   -> f (/=) e0 e1 s
-      (Lt e0 e1)    -> f (<) e0 e1 s
-      (Gt e0 e1)    -> f (>) e0 e1 s
-      (Or e0 e1)    -> f (||) e0 e1 s
-      (And e0 e1)   -> f (&&) e0 e1 s
-      (Not e)       -> g (not) e s
+  case cons of 
+    (Plus e0 e1)  -> biAux (+) e0 e1 s
+    (Minus e0 e1) -> biAux (-) e0 e1 s
+    (Times e0 e1) -> biAux (*) e0 e1 s
+    (Div e0 e1)   -> divAux e0 e1 s
+    (ESeq e0 e1)  -> biAux (\x y -> y) e0 e1 s
+    (UMinus e)    -> uAux (\x -> -x) e s
+    ----------------
+    (Eq e0 e1)    -> biAux (==) e0 e1 s
+    (NEq e0 e1)   -> biAux (/=) e0 e1 s
+    (Lt e0 e1)    -> biAux (<) e0 e1 s
+    (Gt e0 e1)    -> biAux (>) e0 e1 s
+    (Or e0 e1)    -> biAux (||) e0 e1 s
+    (And e0 e1)   -> biAux (&&) e0 e1 s
+    (Not e)       -> uAux (not) e s
+
+biAux :: (a -> a -> b) -> Exp a -> Exp a -> State -> Either Error (Pair b State)
+biAux op e e' s = 
+  case (evalExp e s) of
+    Right (a1 :!: b1) ->  
+      case (evalExp e' b1) of
+        Right (a2 :!: b2) -> Right (op a1 a2 :!: b2)
+        Left err -> Left err 
+    Left err -> Left err
+
+uAux :: (a -> a) -> Exp a -> State -> Either Error (Pair a State)
+uAux op e s = 
+  case (evalExp e s) of
+    Right (a :!: b) -> Right (op a :!: b)
+    Left err -> Left err 
+
+divAux :: Exp Int -> Exp Int -> State -> Either Error (Pair Int State)
+divAux e e' s =
+  case (evalExp e s) of
+    Right (a1 :!: b1) -> 
+      case (evalExp e' s) of
+        Right (0 :!: b2)  -> Left DivByZero 
+        Right (a2 :!: b2) -> Right (div a1 a2 :!: b2)
+        Left err -> Left err
+    Left err -> Left err

@@ -52,7 +52,6 @@ stepComm (Seq c0 c1) s =
   let (a :!: b)  =  (stepComm c0 s)
   in (Seq a c1 :!: b)
 
-
 -- Evalua una expresion
 evalExp :: Exp a -> State -> Pair a State
 evalExp BTrue      s = (True :!: s)

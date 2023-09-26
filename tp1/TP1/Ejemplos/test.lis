@@ -1,13 +1,15 @@
 x = 10; 
-y = 11;
+y = -11;
 if x > y || 5 < z = 6 {
-  x = d = 3, z = 6 + 1, x + d + z;
+  x = d = 3, z = 6 + 5 - 5 + 5 - 5 + 5 - 5, x + d + z;
   y = y * y
 } else {
   x = y
 };
-repeat {
+repeat 
   x = x + 1;
   y = y - 1
-} until y == 0;
-i = x / y
+until 
+  y == 0 && x > 1 || 3 < 4 || 3 > 2 && 3 != 7 && !3 < 1
+end;
+i = x / 2
