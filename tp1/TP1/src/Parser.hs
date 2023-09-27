@@ -197,7 +197,7 @@ boolexp2 = notBool
            boolexp3
 
 boolexp3 :: Parser (Exp Bool)
-boolexp3 = try compBool 
+boolexp3 = compBool 
            <|>
            parens lis boolexp0
            <|>
@@ -238,7 +238,7 @@ iteComm = do reserved lis "if"
                  <|>
                  return (IfThenElse be cm Skip))
          
--- Parser "repeat b until c"
+-- Parser "repeat b until c end"
 ruComm :: Parser Comm
 ruComm = do reserved lis "repeat" 
             cm <- comm

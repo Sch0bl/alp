@@ -10,7 +10,27 @@ cinco = numNat 5
 seis = numNat 6
 diez = numNat 10
 
+eval f m n = showNat(myToNat (f (natToMy (numNat m)) (natToMy (numNat n))))
 
+myCuatro = mySucc (mySucc (mySucc (mySucc myZero)))
+
+myDos = mySucc (mySucc myZero)
+
+myZero = \f z -> z
+
+mySucc = \n f z -> f (n f z)
+
+myFoldn = (\x -> x)
+
+myToNat = (\n -> n Succ Zero)
+
+natToMy n = foldn n (\n' -> (\f -> \z -> f (n' f z))) (\f -> \z -> z)
+
+mySuma m n = m mySucc n
+
+myProd n m = m (mySuma n) myZero
+
+myPot n m = m (myProd n) (mySucc myZero)
 
 foldn :: Nat -> (a -> a) -> a -> a
 foldn Zero f z = z
@@ -64,5 +84,3 @@ heightBin d = foldBin d Zero (\a -> \l -> \r -> (Succ (maxNat l r)))
 
 mirrorBin :: BinTree a -> BinTree a
 mirrorBin d = foldBin d Leaf (\a -> \l -> \r -> (Bin a r l))
-
-
