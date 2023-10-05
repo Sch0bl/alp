@@ -1,0 +1,4 @@
+def Zero = \p q. q 
+def Succ = \n. \f z. f (n f z) 
+def Cuatro = (Succ (Succ (Succ (Succ Zero)))) 
+def Uno = (Succ Zero) 

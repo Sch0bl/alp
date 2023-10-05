@@ -15,7 +15,7 @@ data Name
     |  Quote   Int
   deriving (Show, Eq)
 
-type NameEnv v = [(Name, v)]
+type NameEnv v = [(Name, v)] -- Nombre de entorno [(Name, Valor)]
 
 -- Términos con nombres
 data LamTerm  =  LVar String
@@ -33,12 +33,8 @@ data Term  = Bound Int
 -- Valores
 data Value
     =  VLam      (Value -> Value)
-    |  VNeutral  Neutral
+    |  VNeutral  Neutral  
 
 data Neutral
     =  NFree  Name
     |  NApp   Neutral Value
-
-
-
-
