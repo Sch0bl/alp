@@ -51,9 +51,11 @@ eval' (Free s) (gEnv, lEnv) = case lookup s gEnv of
                                 Just n -> n    
                                 _ -> VNeutral (NFree s)
 eval' (Lam l) (gEnv, lEnv)  = VLam (\x -> (eval' l (gEnv, x : lEnv))) 
-eval' (t1 :@: t2) e  = case eval' t1 e of 
-                          v@(VNeutral n) ->  vapp v (eval' t2 e)
-                          (VLam v) -> v (eval' t2 e)   
+eval' (t1 :@: t2) e  = vapp (eval' t1 e) (eval' t2 e)
+
+                       --   case eval' t1 e of 
+                       --   v@(VNeutral n) ->  vapp v (eval' t2 e)
+                       --   (VLam v) -> v (eval' t2 e)   
 
 --searchGEnv :: Name -> NameEnv -> Maybe Value 
 --searchGEnv s [] = Nothing  
@@ -69,7 +71,7 @@ quote v = quote' v 0
 quote' :: Value -> Int -> Term 
 quote' (VNeutral v) i = auxN v i  
 quote' (VLam f) i = let nv = f (VNeutral (NFree (Quote i))) 
-                    in quote' nv (i + 1)
+                    in Lam $ quote' nv (i + 1)
 
 auxN :: Neutral-> Int -> Term 
 auxN (NFree (Global s)) i = Free (Global s)
