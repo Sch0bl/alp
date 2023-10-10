@@ -1,0 +1,26 @@
+-- Requiere Prelude.lam
+
+def resta = \n m. m pred n
+
+def eq = \n m. is0 (add (resta n m) (resta m n))
+
+def mod'' = \f n m. (is0 (resta m n)) (f (resta n m) m) n
+
+def mod' = \n m. Y mod'' n m
+
+def mod = \n m. (eq n m) 0 (mod' n m)
+
+def verdad = \n m. n
+
+def div' =\f m n.(is0 n) 
+                 nil 
+                 ((is0 (mod m n)) 
+                  (cons n (f m (pred n))) 
+                  (f m (pred n))) 
+
+  def div = \n. Y div' n (pred n) 
+
+
+
+
+

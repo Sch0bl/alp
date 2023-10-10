@@ -22,9 +22,10 @@ conv' l (Abs s t) = Lam (conv' (s:l) t)
 conv' l (App t1 t2) = termRC l t1 :@: termRC l t2   
 
 termRC :: [String] -> LamTerm -> Term 
-termRC l t = case t of   
-                Abs _ _ -> conversion t 
-                otherwise -> conv' l t    
+-- termRC l t = case t of   
+                -- Abs _ _ -> conversion t 
+                -- otherwise -> conv' l t    
+termRC l t = conv' l t
 
 findT :: [String] -> Int -> String -> Maybe Int 
 findT [] _ _  = Nothing 

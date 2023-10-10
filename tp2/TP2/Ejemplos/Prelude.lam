@@ -42,7 +42,7 @@ def head = \xs . xs (\x y . x) bottom
 def Y = \f . (\x . f (x x)) (\x . f (x x))
 
 -- factorial
-def fact = Y (\f n. (is0 n) (suc zero) (mult n (f (pred n))))
+def fact = Y (\h n. (is0 n) (suc zero) (mult n (h (pred n))))
 
 -- bottom
 def bottom = (\x . x x) (\x . x x)
