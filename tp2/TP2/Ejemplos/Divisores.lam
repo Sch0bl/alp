@@ -10,15 +10,13 @@ def mod' = \n m. Y mod'' n m
 
 def mod = \n m. (eq n m) 0 (mod' n m)
 
-def verdad = \n m. n
-
 def div' =\f m n.(is0 n) 
                  nil 
                  ((is0 (mod m n)) 
                   (cons n (f m (pred n))) 
                   (f m (pred n))) 
 
-  def div = \n. Y div' n (pred n) 
+def divisores = \n. Y div' n (pred n) 
 
 
 

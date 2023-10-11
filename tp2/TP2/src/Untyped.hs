@@ -19,13 +19,7 @@ conv' l (LVar v) = case (findT l 0 v) of
                     Just n -> Bound n 
                     Nothing -> Free (Global v) 
 conv' l (Abs s t) = Lam (conv' (s:l) t) 
-conv' l (App t1 t2) = termRC l t1 :@: termRC l t2   
-
-termRC :: [String] -> LamTerm -> Term 
--- termRC l t = case t of   
-                -- Abs _ _ -> conversion t 
-                -- otherwise -> conv' l t    
-termRC l t = conv' l t
+conv' l (App t1 t2) = conv' l t1 :@: conv' l t2   
 
 findT :: [String] -> Int -> String -> Maybe Int 
 findT [] _ _  = Nothing 
@@ -54,14 +48,6 @@ eval' (Free s) (gEnv, lEnv) = case lookup s gEnv of
 eval' (Lam l) (gEnv, lEnv)  = VLam (\x -> (eval' l (gEnv, x : lEnv))) 
 eval' (t1 :@: t2) e  = vapp (eval' t1 e) (eval' t2 e)
 
-                       --   case eval' t1 e of 
-                       --   v@(VNeutral n) ->  vapp v (eval' t2 e)
-                       --   (VLam v) -> v (eval' t2 e)   
-
---searchGEnv :: Name -> NameEnv -> Maybe Value 
---searchGEnv s [] = Nothing  
---searchGEnv s (x:xs) | s == fst x  = Just snd x
---                    | otherwise   =  searchGEnv s xs    
 --------------------------------
 -- Sección 4 - Mostrando Valores
 --------------------------------
