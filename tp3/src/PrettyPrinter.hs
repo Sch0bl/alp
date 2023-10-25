@@ -1,8 +1,8 @@
 module PrettyPrinter
-  ( printTerm
-  ,     -- pretty printer para terminos
-    printType     -- pretty printer para tipos
-  )
+  --( printTerm
+  --,     -- pretty printer para terminos
+    --printType     -- pretty printer para tipos
+  --)
 where
 
 import           Common
@@ -35,9 +35,21 @@ pp ii vs (Lam t c) =
     <> text (vs !! ii)
     <> text ":"
     <> printType t
-    <> text ". "
-    <> pp (ii + 1) vs c
+    <> text ". " <> pp (ii + 1) vs c
+pp ii vs (Let t t') = sep -- Tiene Sentido ?
+  [text "let",
+   text (vs !! ii),
+   text "=",
+   pp (ii + 1) vs t,
+   text "in",
+   pp (ii + 1) vs t']
 
+-- Terminos de Prueba
+let1 :: Term
+abs1 :: Term
+abs1 = (Lam EmptyT (Bound 0))
+
+let1 = (Lam EmptyT (Let abs1 (Bound 0)))
 
 isLam :: Term -> Bool
 isLam (Lam _ _) = True
@@ -63,6 +75,7 @@ fv (Bound _         ) = []
 fv (Free  (Global n)) = [n]
 fv (t   :@: u       ) = fv t ++ fv u
 fv (Lam _   u       ) = fv u
+fv (Let t t') = fv t ++ fv t'
 
 ---
 printTerm :: Term -> Doc
