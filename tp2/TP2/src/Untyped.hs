@@ -60,7 +60,7 @@ quote' (VNeutral v) i = auxN v i
 quote' (VLam f) i = let nv = f (VNeutral (NFree (Quote i))) 
                     in Lam $ quote' nv (i + 1)
 
-auxN :: Neutral-> Int -> Term 
+auxN :: Neutral -> Int -> Term 
 auxN (NFree (Global s)) i = Free (Global s)
 auxN (NFree (Quote k)) i =  (Bound  (i - k - 1)) 
 auxN (NApp n v) i = (auxN n i) :@: (quote' v i) 

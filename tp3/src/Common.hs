@@ -34,8 +34,6 @@ module Common where
                 |  LApp LamTerm LamTerm
                 -- Sección 6
                 |  LLet String LamTerm LamTerm
-                -- Sección 7
-                |  LAs LamTerm Type
                 -- Sección 8
                 |  LUnit
                 -- Sección 9
@@ -56,8 +54,6 @@ module Common where
              | Lam Type Term
              -- Sección 6
              | Let Term Term
-             -- Sección 7
-             | As Term Type
              -- Sección 8
              | Unit
              -- Sección 9

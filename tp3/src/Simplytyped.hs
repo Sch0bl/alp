@@ -22,10 +22,18 @@ conversion = conversion' []
 
 conversion' :: [String] -> LamTerm -> Term
 conversion' b (LVar n    ) = maybe (Free (Global n)) Bound (n `elemIndex` b)
+
+-- Ejercicio 2
+conversion' b LUnit        = Unit
+--
+
 conversion' b (LApp t u  ) = conversion' b t :@: conversion' b u
 conversion' b (LAbs n t u) = Lam t (conversion' (n : b) u)
+
+-- Ejercicio 1
 conversion' b (LLet n t u) = Let (conversion' b t) 
                                  (conversion' (n:b) u)
+--
 
 -----------------------
 --- eval
@@ -35,14 +43,20 @@ sub :: Int -> Term -> Term -> Term
 sub i t (Bound j) | i == j    = t
 sub _ _ (Bound j) | otherwise = Bound j
 sub _ _ (Free n   )           = Free n
+--Ejercicio 2
+sub _ _ Unit                  = Unit 
+--Ejercicio 2
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
+--Ejercicio 1
 sub i t (Let t' u)            = Let (sub i t t') (sub i t u) 
+--Ejercicio 1
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
 eval _ (Bound _             ) = error "variable ligada inesperada en eval"
 eval e (Free  n             ) = fst $ fromJust $ lookup n e
+eval e Unit                   = VUnit
 eval _ (Lam      t   u      ) = VLam t u
 eval e (Lam _ u  :@: Lam s v) = eval e (sub 0 (Lam s v) u)
 eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
@@ -57,6 +71,7 @@ eval e (Let t u) = eval e (sub 0 t u)
 
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
+quote VUnit      = Unit
 
 ----------------------
 --- type checker
@@ -95,6 +110,7 @@ notfoundError n = err $ show n ++ " no está definida."
 
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i) = ret (c !! i)
+infer' _ _ Unit      = Right UnitT
 infer' _ e (Free  n) = case lookup n e of
   Nothing     -> notfoundError n
   Just (_, t) -> ret t

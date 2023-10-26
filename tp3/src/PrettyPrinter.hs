@@ -24,6 +24,7 @@ parensIf False = id
 
 pp :: Int -> [String] -> Term -> Doc
 pp ii vs (Bound k         ) = text (vs !! (ii - k - 1))
+pp _  _  Unit               = text "unit"
 pp _  _  (Free  (Global s)) = text s
 
 pp ii vs (i :@: c         ) = sep
@@ -40,7 +41,7 @@ pp ii vs (Let t t') = sep -- Tiene Sentido ?
   [text "let",
    text (vs !! ii),
    text "=",
-   pp (ii + 1) vs t,
+   pp ii vs t,
    text "in",
    pp (ii + 1) vs t']
 
@@ -62,6 +63,7 @@ isApp _         = False
 -- pretty-printer de tipos
 printType :: Type -> Doc
 printType EmptyT = text "E"
+printType UnitT  = text "Unit"
 printType (FunT t1 t2) =
   sep [parensIf (isFun t1) (printType t1), text "->", printType t2]
 
@@ -72,6 +74,7 @@ isFun _          = False
 
 fv :: Term -> [String]
 fv (Bound _         ) = []
+fv Unit               = []
 fv (Free  (Global n)) = [n]
 fv (t   :@: u       ) = fv t ++ fv u
 fv (Lam _   u       ) = fv u

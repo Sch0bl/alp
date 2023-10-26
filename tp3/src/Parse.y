@@ -24,6 +24,8 @@ import Data.Char
     '->'    { TArrow }
     VAR     { TVar $$ }
     TYPEE   { TTypeE }
+    TYPEU   { TTypeU }
+    UNIT    { TUnit }
     DEF     { TDef }
     IN      { TIn }
     LET     { TLet }
@@ -51,9 +53,11 @@ NAbs    :: { LamTerm }
 
 Atom    :: { LamTerm }
         : VAR                          { LVar $1 }  
+        | UNIT                         { LUnit }
         | '(' Exp ')'                  { $2 }
 
 Type    : TYPEE                        { EmptyT }
+        | TYPEU                        { UnitT }
         | Type '->' Type               { FunT $1 $3 }
         | '(' Type ')'                 { $2 }
 
@@ -102,6 +106,8 @@ data Token = TVar String
                | TEOF
                | TLet
                | TIn
+               | TTypeU
+               | TUnit
                deriving Show
 
 ----------------------------------
@@ -127,9 +133,11 @@ lexer cont s =
      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
     where lexVar cs = case span isAlpha cs of
               ("E",rest)    -> cont TTypeE rest
+              ("Unit",rest) -> cont TTypeU rest
               ("def",rest)  -> cont TDef rest
               ("let",rest)  -> cont TLet rest
               ("in",rest)   -> cont TIn  rest
+              ("unit",rest) -> cont TUnit rest
               (var,rest)    -> cont (TVar var) rest
           consumirBK anidado cl cont s = case s of
               ('-':('-':cs)) -> consumirBK anidado cl cont $ dropWhile ((/=) '\n') cs
