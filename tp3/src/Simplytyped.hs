@@ -22,18 +22,28 @@ conversion = conversion' []
 
 conversion' :: [String] -> LamTerm -> Term
 conversion' b (LVar n    ) = maybe (Free (Global n)) Bound (n `elemIndex` b)
-
 -- Ejercicio 2
 conversion' b LUnit        = Unit
---
-
+-- Ejercicio 2
+-- Ejercicio 4
+conversion' b (LPair lt lt') = Pair (conversion' b lt)
+                                    (conversion' b lt')
+conversion' b (LFst lt)       = Fst (conversion' b lt)
+conversion' b (LSnd lt)       = Snd (conversion' b lt)
+-- Ejercicio 4
 conversion' b (LApp t u  ) = conversion' b t :@: conversion' b u
 conversion' b (LAbs n t u) = Lam t (conversion' (n : b) u)
-
 -- Ejercicio 1
 conversion' b (LLet n t u) = Let (conversion' b t) 
                                  (conversion' (n:b) u)
---
+-- Ejercicio 1
+-- Ejercicio 5
+conversion' b LZero = Zero
+conversion' b (LSuc t) = Suc (conversion' b t)
+conversion' b (LRec t1 t2 t3) = Rec (conversion' b t1)
+                                  (conversion' b t2)
+                                  (conversion' b t3)
+-- Ejercicio 5
 
 -----------------------
 --- eval
@@ -46,33 +56,69 @@ sub _ _ (Free n   )           = Free n
 --Ejercicio 2
 sub _ _ Unit                  = Unit 
 --Ejercicio 2
+--Ejercicio 4
+sub i t (Pair t' u)           = Pair ( sub i t t' ) (sub i t u)
+sub i t (Fst u)               = Fst $ sub i t u
+sub i t (Snd u)               = Snd $ sub i t u
+--Ejercicio 4
 sub i t (u   :@: v)           = sub i t u :@: sub i t v
 sub i t (Lam t'  u)           = Lam t' (sub (i + 1) t u)
 --Ejercicio 1
 sub i t (Let t' u)            = Let (sub i t t') (sub i t u) 
 --Ejercicio 1
+-- Ejercicio 5
+sub _ t Zero = Zero
+sub i t (Suc t') = Suc (sub i t t')
+sub i t (Rec t1 t2 t3) = Rec (sub i t t1)
+                         (sub i t t2)  
+                         (sub i t t3)
+-- Ejercicio 5
 
 -- evaluador de términos
 eval :: NameEnv Value Type -> Term -> Value
 eval _ (Bound _             ) = error "variable ligada inesperada en eval"
 eval e (Free  n             ) = fst $ fromJust $ lookup n e
+--Ejercicio 2
 eval e Unit                   = VUnit
+--Ejercicio 2
+--Ejercicio 4
+eval e (Pair t t')            = let v = eval e t 
+                                in VPair v $ eval e t'
+eval e (Fst t)                = let VPair v _ = eval e t 
+                                in v
+eval e (Snd t)                = let VPair _ v = eval e t 
+                                in v
+--Ejercicio 4
 eval _ (Lam      t   u      ) = VLam t u
 eval e (Lam _ u  :@: Lam s v) = eval e (sub 0 (Lam s v) u)
 eval e (Lam t u1 :@: u2) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
 eval e (u        :@: v      ) = case eval e u of
   VLam t u' -> eval e (Lam t u' :@: v)
   _         -> error "Error de tipo en run-time, verificar type checker"
+--Ejercicio 1
 eval e (Let t u) = eval e (sub 0 t u)
-
------------------------
+--Ejercicio 1
+eval e Zero = VNum NZero
+eval e (Suc t) = let VNum n = eval e t
+                  in VNum (NSuc n)
+eval e (Rec t1 t2 Zero) = eval e t1
+eval e (Rec t1 t2 (Suc t)) = eval e ((t2 :@:(Rec t1 t2 t)) :@: t)
+eval e (Rec t1 t2 t3) = let vn = eval e t3
+                        in eval e (Rec t1 t2 (quote vn)) 
+-----------
 --- quoting
------------------------
+-----------
 
 quote :: Value -> Term
 quote (VLam t f) = Lam t f
+--Ejercicio 2
 quote VUnit      = Unit
-
+--Ejercicio 2
+--Ejercicio 4
+quote (VPair v v') = Pair (quote v) (quote v')
+--Ejercicio 4
+quote (VNum NZero) = Zero
+quote (VNum (NSuc n)) = Suc (quote (VNum n))
 ----------------------
 --- type checker
 -----------------------
@@ -110,7 +156,9 @@ notfoundError n = err $ show n ++ " no está definida."
 
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i) = ret (c !! i)
+--Ejercicio 2
 infer' _ _ Unit      = Right UnitT
+--Ejercicio 2
 infer' _ e (Free  n) = case lookup n e of
   Nothing     -> notfoundError n
   Just (_, t) -> ret t
@@ -119,10 +167,30 @@ infer' c e (t :@: u) = infer' c e t >>= \tt -> infer' c e u >>= \tu ->
     FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
     _          -> notfunError tt
 infer' c e (Lam t u) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
-infer' c e (Let t1 t2) = infer' c e t1 
-                         >>=
-                         \tt1 -> infer' (tt1 : c) e t2 
-                         >>= 
-                         \tt2 -> ret $ tt2
-
+--Ejercicio 1
+infer' c e (Let t t') = infer' c e t  >>= 
+                         \tt -> infer' (tt : c) e t' >>=
+                         \tt' -> ret tt'
+--Ejercicio 4
+infer' c e (Pair t t')  = infer' c e t >>= 
+                          \x -> (infer' c e t' >>=
+                                 \y -> ret $ PairT x y)
+infer' c e (Fst t)      = infer' c e t >>=
+                          \(PairT x _) -> ret x 
+infer' c e (Snd t)      = infer' c e t >>=
+                          \(PairT _ x) -> ret x 
+--Ejercicio 4
+--Ejercicio 5
+infer' c e Zero = Right NatT
+infer' c e (Suc t) = infer' c e t >>= \t -> ret t
+infer' c e (Rec t1 t2 t3) = infer' c e t1 >>= 
+                            \t -> infer' c e t2 >>=
+                            \t' -> infer' c e t3 >>=
+                            \t'' -> if t'' == NatT
+                                    then case t' of
+                                            FunT a (FunT NatT a') ->
+                                              if a == a' && a == t then ret a else err "mismatch Rec types" 
+                                            _  -> err "not expected function"
+                                    else err "mismatch Rec types"
+--Ejercicio 5
 ----------------------------------
