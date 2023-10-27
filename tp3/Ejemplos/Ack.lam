@@ -1,0 +1,4 @@
+def idNat = \x:Nat. x
+def succ  = \x:Nat. suc x
+def pred  = \n:Nat. R 0 (\r:Nat.\y:Nat.y) n
+def ack   = \m:Nat. R succ (\r:Nat->Nat. \y:Nat. \n:Nat. R (r (suc 0)) (\u:Nat.\x:Nat. r u) n) m 
