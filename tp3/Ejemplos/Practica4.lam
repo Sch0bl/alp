@@ -1,0 +1,11 @@
+--  pred :: Nat -> Nat
+def pred = \n:Nat. 
+    R 0 (\r:Nat.\y:Nat.y) n
+
+--  suma :: Nat -> Nat -> Nat
+def suma = \m:Nat. \n:Nat. 
+    R m (\r:Nat. \y:Nat. suc r) n  
+
+--  mult :: Nat -> Nat -> Nat
+def mult = \m:Nat. \n:Nat. 
+    R 0 (\r:Nat. \y:Nat. suma m r) n

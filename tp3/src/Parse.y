@@ -51,7 +51,6 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
-        | REC Atom Atom Atom           { LRec $2 $3 $4 } 
         | Succ                         { $1 }
 
 Succ    :: { LamTerm }
@@ -65,6 +64,7 @@ Proy    :: { LamTerm }
 
 NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
+        | REC Atom Atom Atom           { LRec $2 $3 $4 } 
         | Atom                         { $1 }
 
 Atom    :: { LamTerm }
@@ -138,6 +138,8 @@ data Token = TVar String
                deriving Show
 
 ----------------------------------
+myAlpha c = c == '\'' || isAlpha c -- Permite usar variables del estilo x', x''
+----------------------------------
 lexer cont s = 
   case s of
     [] -> cont TEOF []
@@ -152,7 +154,7 @@ lexer cont s =
     ('\\':cs)-> cont TAbs cs
     ('.':cs) -> cont TDot cs
     (',':cs) -> cont TComma cs
-    ('0':cs)    -> cont TZero cs
+    ('0':cs) -> cont TZero cs
     ('(':cs) -> cont TOpen cs
     ('-':('>':cs)) -> cont TArrow cs
     (')':cs) -> cont TClose cs
@@ -160,7 +162,7 @@ lexer cont s =
     ('=':cs) -> cont TEquals cs
     unknown -> \line -> Failed $ 
      "Línea "++(show line)++": No se puede reconocer "++(show $ take 10 unknown)++ "..."
-    where lexVar cs = case span isAlpha cs of
+    where lexVar cs = case span myAlpha cs of
               ("E",rest)    -> cont TTypeE rest
               ("Nat",rest)  -> cont TTypeN rest
               ("Unit",rest) -> cont TTypeU rest

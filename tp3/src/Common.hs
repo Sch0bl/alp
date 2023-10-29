@@ -34,13 +34,13 @@ module Common where
                 |  LApp LamTerm LamTerm
                 -- Sección 6
                 |  LLet String LamTerm LamTerm
-                -- Sección 8
+                -- Sección 7
                 |  LUnit
-                -- Sección 9
+                -- Sección 8
                 |  LFst LamTerm
                 |  LSnd LamTerm
                 |  LPair LamTerm LamTerm
-                -- Sección 10
+                -- Sección 9
                 |  LZero
                 |  LSuc LamTerm
                 |  LRec LamTerm LamTerm LamTerm
@@ -54,13 +54,13 @@ module Common where
              | Lam Type Term
              -- Sección 6
              | Let Term Term
-             -- Sección 8
+             -- Sección 7
              | Unit
-             -- Sección 9
+             -- Sección 8
              | Fst Term
              | Snd Term
              | Pair Term Term
-             -- Sección 10
+             -- Sección 9
              | Zero
              | Suc Term
              | Rec Term Term Term
@@ -68,11 +68,11 @@ module Common where
 
   -- Valores
   data Value = VLam Type Term 
-             -- Sección 8
+             -- Sección 7
              | VUnit
-             -- Sección 9
+             -- Sección 8
              | VPair Value Value
-             -- Sección 10
+             -- Sección 9
              | VNum NumVal
            deriving (Show, Eq)
 
