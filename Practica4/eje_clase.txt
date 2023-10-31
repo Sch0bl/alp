@@ -1,0 +1,37 @@
+Probar que todo monada es un functor, es decir proveer una instancia
+
+instance Monad m => Functor m where
+    fmap :: (a -> b) -> m a -> m b
+    fmap f = \x -> x >>= \a -> return (f a)
+
+fmap id 
+= {def fmap}
+\x -> x >>= \a -> return (id a)
+= {def id}
+\x -> x >>= \a -> return a
+= {etha redex}
+\x -> x >>= return
+= {def monad.2}
+\x -> x
+= {def id}
+id
+
+Therefore fmap id x = x
+
+fmap f . fmap g
+= {def .}
+\y -> fmap f (fmap g y)
+= {def fmap}
+\y -> fmap f (y >>= \a -> return (g a))
+= {def fmap}
+\y -> y >>= \a -> return (g a) >>= \b -> return (f b)
+= {def monad 3 and return}
+\y -> y >>= return >>= \a -> return (f (g a))
+= {def monad 2}
+\y -> y >>= \a -> return (f (g a))
+= {def .}
+\y -> y >>= \a -> return ((f . g) a)
+= {def fmap}
+fmap f . g
+
+
