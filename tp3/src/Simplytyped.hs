@@ -11,7 +11,7 @@ where
 
 import           Data.List
 import           Data.Maybe
-import           Prelude                        hiding ( (>>=)  )
+import           Prelude                        hiding ( (>>=)  ) 
 import           Text.PrettyPrint.HughesPJ             ( render )
 import           PrettyPrinter
 import           Common
@@ -116,6 +116,13 @@ matchError t1 t2 =
     ++ render (printType t2)
     ++ " fue inferido."
 
+pairError :: Type -> Either String Type
+pairError t  =
+  err
+    $  "se esperaba PairT, pero "
+    ++ render (printType t)
+    ++ " fue inferido."
+
 notfunError :: Type -> Either String Type
 notfunError t1 = err $ render (printType t1) ++ " no puede ser aplicado."
 
@@ -126,6 +133,9 @@ infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i     ) = ret (c !! i)
 infer' _ _  Unit          = Right UnitT
 infer' c e  Zero          = Right NatT
+infer' c e (Lam t u     ) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
+infer' c e (Let t t'    ) = infer' c e t >>= \tt -> infer' (tt : c) e t' >>= \tt' -> ret tt'
+infer' c e (Pair t t'   ) = infer' c e t >>= \x -> infer' c e t' >>= \y -> ret $ PairT x y
 
 infer' _ e (Free  n     ) =
   case lookup n e of
@@ -138,12 +148,21 @@ infer' c e (t :@: u     ) =
       FunT t1 t2 -> if (tu == t1) then ret t2 else matchError t1 tu
       _          -> notfunError tt
 
-infer' c e (Lam t u     ) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
-infer' c e (Let t t'    ) = infer' c e t  >>= \tt -> infer' (tt : c) e t' >>= \tt' -> ret tt'
-infer' c e (Pair t t'   ) = infer' c e t >>= \x -> infer' c e t' >>= \y -> ret $ PairT x y
-infer' c e (Fst t       ) = infer' c e t >>= \(PairT x _) -> ret x 
-infer' c e (Snd t       ) = infer' c e t >>= \(PairT _ x) -> ret x 
-infer' c e (Suc t       ) = infer' c e t >>= \t -> ret t
+infer' c e (Fst t       ) =
+  infer' c e t >>= \t -> 
+    case t of
+      (PairT x _) -> ret x
+      _           -> pairError t
+
+infer' c e (Snd t       ) =
+  infer' c e t >>= \t -> 
+    case t of
+      (PairT _ x) -> ret x
+      _           -> pairError t
+
+infer' c e (Suc t       ) = 
+  infer' c e t >>= \t -> 
+    if t /= NatT then matchError NatT t else ret t
 
 infer' c e (Rec t1 t2 t3) =
   infer' c e t1 >>= \t -> infer' c e t2 >>= \t' -> infer' c e t3 >>= \t'' ->

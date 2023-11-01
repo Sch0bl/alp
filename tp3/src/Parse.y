@@ -40,7 +40,10 @@ import Data.Char
 %right VAR
 %left '=' 
 %right '->'
-%right '\\' '.' 
+%right '\\' '.' LET IN
+%left REC
+%left SUC
+%left FST SND
 
 %%
 
@@ -51,20 +54,14 @@ Defexp  : DEF VAR '=' Exp              { Def $2 $4 }
 Exp     :: { LamTerm }
         : '\\' VAR ':' Type '.' Exp    { LAbs $2 $4 $6 }
         | LET VAR '=' Exp IN Exp       { LLet $2 $4 $6 }
-        | Succ                         { $1 }
-
-Succ    :: { LamTerm }
-        : SUC Exp                      { LSuc $2 } 
-        | Proy                         { $1 }
-
-Proy    :: { LamTerm }
-        : FST Exp                      { LFst $2 }
+        | REC Atom Atom Exp            { LRec $2 $3 $4 } 
+        | SUC Exp                      { LSuc $2 } 
+        | FST Exp                      { LFst $2 }
         | SND Exp                      { LSnd $2 }
         | NAbs                         { $1}
 
 NAbs    :: { LamTerm }
         : NAbs Atom                    { LApp $1 $2 }
-        | REC Atom Atom Atom           { LRec $2 $3 $4 } 
         | Atom                         { $1 }
 
 Atom    :: { LamTerm }
