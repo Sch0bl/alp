@@ -11,7 +11,7 @@ where
 
 import           Data.List
 import           Data.Maybe
-import           Prelude                        hiding ( (>>=)  ) 
+import           Prelude                        hiding  ( (>>=) ) 
 import           Text.PrettyPrint.HughesPJ             ( render )
 import           PrettyPrinter
 import           Common
@@ -22,14 +22,14 @@ conversion = conversion' []
 
 conversion' :: [String] -> LamTerm -> Term
 conversion' b (LVar n       ) = maybe (Free (Global n)) Bound (n `elemIndex` b)
-conversion' b  LUnit          = Unit
+conversion' b LUnit           = Unit
 conversion' b (LPair lt lt' ) = Pair (conversion' b lt) (conversion' b lt')
 conversion' b (LFst lt      ) = Fst (conversion' b lt)
 conversion' b (LSnd lt      ) = Snd (conversion' b lt)
 conversion' b (LApp t u     ) = conversion' b t :@: conversion' b u
 conversion' b (LAbs n t u   ) = Lam t (conversion' (n : b) u)
 conversion' b (LLet n t u   ) = Let (conversion' b t) (conversion' (n:b) u)
-conversion' b  LZero          = Zero
+conversion' b LZero           = Zero
 conversion' b (LSuc t       ) = Suc (conversion' b t)
 conversion' b (LRec t1 t2 t3) = Rec (conversion' b t1) (conversion' b t2) (conversion' b t3)
 
@@ -57,9 +57,9 @@ eval :: NameEnv Value Type -> Term -> Value
 eval _ (Bound _             ) = error "variable ligada inesperada en eval"
 eval e (Free  n             ) = fst $ fromJust $ lookup n e
 eval e Unit                   = VUnit
-eval e (Pair t t')            = let v = eval e t in VPair v $ eval e t'
-eval e (Fst t)                = let VPair v _ = eval e t in v
-eval e (Snd t)                = let VPair _ v = eval e t in v
+eval e (Pair t t'           ) = let v = eval e t in VPair v $ eval e t'
+eval e (Fst t               ) = let VPair v _ = eval e t in v
+eval e (Snd t               ) = let VPair _ v = eval e t in v
 eval _ (Lam      t   u      ) = VLam t u
 eval e (Lam _ u  :@: Lam s v) = eval e (sub 0 (Lam s v) u)
 eval e (Lam t u1 :@: u2     ) = let v2 = eval e u2 in eval e (sub 0 (quote v2) u1)
@@ -131,8 +131,8 @@ notfoundError n = err $ show n ++ " no está definida."
 
 infer' :: Context -> NameEnv Value Type -> Term -> Either String Type
 infer' c _ (Bound i     ) = ret (c !! i)
-infer' _ _  Unit          = Right UnitT
-infer' c e  Zero          = Right NatT
+infer' _ _ Unit           = Right UnitT
+infer' c e Zero           = Right NatT
 infer' c e (Lam t u     ) = infer' (t : c) e u >>= \tu -> ret $ FunT t tu
 infer' c e (Let t t'    ) = infer' c e t >>= \tt -> infer' (tt : c) e t' >>= \tt' -> ret tt'
 infer' c e (Pair t t'   ) = infer' c e t >>= \x -> infer' c e t' >>= \y -> ret $ PairT x y
