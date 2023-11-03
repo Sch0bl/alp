@@ -132,4 +132,64 @@ luego de los dos casos tenemos que la igualdad vale
 
 -}
 
+data GenTree a = Gen a [GenTree a]
+
+instance Functor GenTree where
+  fmap f (Gen a xs) = Gen (f a) $ map (fmap f) xs
+
+{-
+fmap id = id ?
+
+Notemos que map es fmap de listas y por lo tanto vale que 
+-- map id = id                                     (1)
+-- map (f . g) = (map f) . (map g)                 (2)
+
+Probamos por inducción estructural en GenTree
+
+Suponemos que la igualdad vale para todos los GenTree en xs
+
+fmap id (Gen a xs)
+= {def fmap}
+Gen (id a) $ map (fmap id) xs
+= {HI}
+Gen (id a) $ map id xs
+= {def id y 1}
+Gen a xs
+
+Lugo por extensionalidad tenemos fmap id = id
+
+ahora 
+
+fmap (f . g) = (fmap f) . (fmap g)?
+
+suponemos que la igualdad vale para todo GenTree en xs
+
+fmap (f . g) (Gen a xs)
+= {def fmap}
+Gen ((f . g) a) $ map (fmap (f . g)) xs
+= {HI}
+Gen ((f . g) a) $ map ((fmap f) . (fmap g)) xs
+= {def . y (2)}
+Gen (f (g a)) $ map (fmap f) (map (fmap g) xs)
+= {def fmap}
+fmap f (Gen (g a) $ map (fmap g) xs)
+= {def fmap}
+fmap f (fmap g (Gen a xs))
+= {def .}
+(fmap f) . (fmap g) (Gen a xs)
+
+Luego, por extensionalidad tenemos que la igualdad vale .
+-}
+
+data Cont a = C ((a -> Int) -> Int)
+--Ejemplos
+
+ejje :: (Int -> Int) -> Int
+ejje f = f 3
+
+eje :: Cont Int 
+eje = C ejje 
+
+instance Functor Cont where
+  fmap f (C h) = C $ \app -> h (app . f)   
 
