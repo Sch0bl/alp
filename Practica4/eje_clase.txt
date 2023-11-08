@@ -35,3 +35,10 @@ fmap f . fmap g
 fmap f . g
 
 
+
+--------------------- Clase 11/6 -------------------------
+
+newtype M a = {runR :: (Env -> Maybe (a, Int))}
+
+intance Monad M where
+    return a = 

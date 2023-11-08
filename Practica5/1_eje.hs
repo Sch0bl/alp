@@ -5,6 +5,7 @@ Functores
 -}
 --a)
 
+----------------------------- Ejercicio 1 ------------------------------
 data Pair a = P (a,a)
 
 instance Functor Pair where
@@ -193,3 +194,151 @@ eje = C ejje
 instance Functor Cont where
   fmap f (C h) = C $ \app -> h (app . f)   
 
+{-
+fmap id = id ?
+
+fmap id (C h)
+= {def fmap}
+C $ \app -> h (app . id)
+= {def id}
+C $ \app -> h app
+= {etha reduction}
+C h
+
+Luego por extensionalidad tenemos fmap id = id
+
+fmap (f . g) = (fmap f) . (fmap g)?
+
+(fmap f) . (fmap g) (C h)
+= {def .}
+fmap f (fmap g (C h))
+= {def fmap}
+fmap f (C $ \app -> h (app . g))
+= {def fmap}
+C $ \app' -> (\app -> h (app . g)) (app' . f))
+= {b reduction}
+C $ \app' -> h ((app' . f) . g)
+= {def . (monoide)}
+C $ \app' -> h (app' . (f . g))
+= {def fmap}
+fmap (f . g) (C h)
+-}
+
+
+----------------------------- Ejercicio 2 ------------------------------
+
+
+data Func a = F (a -> a)
+
+instance Functor Func where
+  fmap g (F f) = F id
+
+{-
+
+Observermos que la propiedad fmap id = id no se cumple
+ya que si tomamos f != id tenemos por un lado 
+fmap id (F f) = (F id)
+pero por el otro tenemos
+id (F f) = (F f)
+donde (F f) != (F id)
+por lo cual fmap id != id
+
+-}
+
+data Br b a = B b (a,a)
+
+instance Functor (Br b) where 
+  fmap f (B x (y,z)) = B x (f z, f y)
+
+{-
+Analogo al anterior, tomando z != y
+-}
+
+
+----------------------------- Ejercicio 3 ------------------------------
+
+-- a)
+data MyEither e a = ML e | MR a 
+
+instance Functor (MyEither e) where
+  fmap f (ML e) = (ML e)
+  fmap f (MR a) = (MR (f a))
+
+instance Applicative (MyEither e) where
+  -- pure :: (a -> b) -> MyEither (a -> b)
+  pure = MR
+  -- <*> :: MyEither (a -> b) -> MyEither a -> MyEither b
+  (ML   e) <*>    _    = ML e  
+  (MR  f ) <*> (ML  e) = ML e 
+  (MR  f ) <*> (MR  a) = MR  (f a)
+
+-- b)
+{-
+instance Applicative ((->) r) where
+  pure :: a -> (r -> a)
+  pure a = ((->) r a)
+  <*> :: (a -> b) -> (r -> a) -> (r -> b)
+  h <*> f = h . f
+-}
+
+----------------------------- Ejercicio 4 ------------------------------
+
+liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+liftA2 op h i = (pure op) <*> h <*> i
+
+liftA5 :: Applicative f => (a -> b -> c -> d -> e -> k)
+                           ->
+                           f a ->
+                           f b ->
+                           f c ->
+                           f d ->
+                           f e ->
+                           f k 
+liftA5 op fa fb fc fd fe = 
+  (pure op) <*> fa <*> fb <*> fc <*> fd <*> fe 
+
+----------------------------- Ejercicio 5 ------------------------------
+
+sA :: Applicative f => [f a] -> f [a]
+sA [] = pure []
+sA (x:xs) = let fl = sA xs
+                   in (pure (:)) <*> x <*> fl 
+
+----------------------------- Ejercicio 6 ------------------------------
+{-
+Probar que todo monada es un functor, es decir proveer una instancia
+
+instance Monad m => Functor m where
+    fmap :: (a -> b) -> m a -> m b
+    fmap f = \x -> x >>= \a -> return (f a)
+
+fmap id 
+= {def fmap}
+\x -> x >>= \a -> return (id a)
+= {def id}
+\x -> x >>= \a -> return a
+= {etha redex}
+\x -> x >>= return
+= {def monad.2}
+\x -> x
+= {def id}
+id
+
+Therefore fmap id x = x
+
+fmap f . fmap g
+= {def .}
+\y -> fmap f (fmap g y)
+= {def fmap}
+\y -> fmap f (y >>= \a -> return (g a))
+= {def fmap}
+\y -> y >>= \a -> return (g a) >>= \b -> return (f b)
+= {def monad 3 and return}
+\y -> y >>= return >>= \a -> return (f (g a))
+= {def monad 2}
+\y -> y >>= \a -> return (f (g a))
+= {def .}
+\y -> y >>= \a -> return ((f . g) a)
+= {def fmap}
+fmap f . g
+-}
