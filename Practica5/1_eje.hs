@@ -1,3 +1,5 @@
+import Control.Applicative (Applicative (..))
+import Control.Monad (liftM, ap)
 {-
 Functores 
     fmap id = id
@@ -342,3 +344,338 @@ fmap f . fmap g
 = {def fmap}
 fmap f . g
 -}
+
+----------------------------- Ejercicio 7 ------------------------------
+newtype Id a = Id a
+
+--instance Functor Id where
+  --fmap f (Id a) = (Id (f a))
+
+--instance Applicative Id where
+  ---- pure :: a -> Id a
+  --pure a = (Id a)
+  ---- <*> :: Id (a -> b) -> Id a -> Id b
+  --(Id f) <*> (Id a) = (Id (f a))
+
+instance Functor Id where
+  fmap = liftM
+
+instance Applicative Id where
+  pure a = Id a
+  (<*>) = ap
+--a)
+instance Monad Id where
+  --return a = Id a 
+--(>>=) :: Id a -> (a -> Id b) -> Id b
+  (Id a) >>= f = (f a) 
+
+instance Monad (MyEither e) where
+  --return = pure
+--(>>=) :: MyEither e a -> (a -> (MyEither e b)) -> MyEither e b
+  ML e >>= _ = ML e
+  MR a >>= f = (f a)
+
+--b)
+{-
+  Leyes de monad
+  1. pure a >>= f = f a 
+  2. m >>= pure = m
+  3. m >>= (\x -> k x >>= h) = (m >>= k) >>= h
+-}
+
+
+{-
+type Id a
+
+1
+pure a >>= f 
+= {def pure}
+Id a >>= f
+= {def >>=}
+f a
+
+therefor pure a >>= f = f a
+
+(Id a) >>= pure
+= {def >>=}
+pure a
+= {def a}
+(Id a)
+
+therefore (Id a) >>= pure = (Id a)
+
+(Id a) >>= (\x -> k x >>= h)
+= {def >>=}
+k a >>= h
+= {def >>=}
+((Id a) >>= k) >>= h
+
+therefore  
+(Id a) >>= (\x -> k x >>= h)
+=
+((Id a) >>= k) >>= h
+
+
+(Either e)
+
+pure a >>= k
+= {def pure}
+MR a >>= k
+= {def >>=}
+k a
+
+therefore pure a >>= k = k a
+
+Caso m === ML e
+ML e >>= pure
+= {def >>=}
+ML e               ok
+
+Caso m === MR a
+MR a >>= pure
+= {def >>=}
+pure a
+= {def pure}
+MR a               ok
+
+therefore m >>= pure = m
+
+Caso m === ML e
+(ML e) >>= (\x -> k x >>= h)
+= {def >>=}
+ML e
+= {def >>=}
+ML e >>= h
+= {def >>=}
+(ML e >>= k) >>= h
+
+Caso m === MR a
+(MR a) >>= (\x -> k x >>= h)
+= {def >>=}
+k a >>= h
+= {def >>=}
+(MR a >>= k) >>= h
+
+therefore m >>= (\x -> k x >>= h)
+-}
+
+----------------------------- Ejercicio 8 ------------------------------
+
+newtype Lista a = L [a]
+
+instance Functor Lista where
+  fmap = liftM
+
+instance Applicative Lista where
+  pure a = (L [a])
+  (<*>)  = ap 
+
+instance Monad Lista where
+  L []     >>= f = L []
+  L (a:as) >>= f = 
+    let L bs = L as >>= f
+        L b  = (f a)
+    in  L (b ++ bs) 
+
+{-
+Lo hago con listas directamente
+
+pure a >>= k
+= {def pure}
+[a] >>= k
+= {def >>=}
+let bs = [] >>= k
+in (k a) ++ bs
+= {def >>=}
+let bs = []
+in  (k a) ++ bs
+= {def let}
+(k a) ++ []
+= {def ++}
+k a
+
+there fore pure a >>= k = k a
+
+Caso m = []
+
+[] >>= pure
+= {def >>=}
+[]                             ok
+
+Caso m = (a:as)
+suponemos que vale para as  HI
+
+(a:as) >>= pure
+= {def >>=}
+let bs = as >>= pure
+in  (pure a) ++ bs
+= {HI}
+let bs = as
+in (pure a) ++ bs
+= {def let y pure}
+[a] ++ as
+= {def ++}
+(a:as)                          ok
+
+therefore m >>= pure = m
+
+Caso m = []
+
+[] >>= (\x -> k x >>= h)
+= {def >>=}
+[]
+= {def >>=}
+[]
+= {def >>=}
+[]                               ok
+
+Caso m = (a:as)
+suponemos que vale para as HI
+
+(a:as) >>= (\x -> k x >>= h)
+= {def >>=}
+let bs = as >>= (\x -> k x >>= h)
+in  (k a >>= h) ++ bs
+= {HI y def let}
+(k a >>= h) ++ (as >>= k) >>= h
+= {prop 1}
+k a >>= h ++ (as >>= k) >>= h
+= {Lemma 1}
+((k a) ++ as >>= k) >>= h
+= {def >>=}
+((a:as) >>= k) >>= h
+
+Lemma 1
+(xs ++ ys) >>= h = (xs >>= h) ++ (ys >>= h)
+
+Probaremos por iducción estructural en listas
+
+caso xs = []
+
+([] ++ ys) >>= h
+= {def ++}
+ys >>= h
+= {def ++}
+[] ++ (ys >>= h)
+= {def >>=}
+([] >>= h) ++ (ys >>= h)
+ok
+
+caso xs = (a:as)
+
+((a:as) ++ ys) >>= h
+= {def ++}
+(a: (as ++ ys)) >>= h
+= {def >>=}
+h a ++ (as ++ ys >>= h) 
+= {HI}
+h a ++ (as >>= h ++ ys >>= h)
+= {++ Monoide}
+(h a ++ as >>= h) ++ ys >>= h
+= {def >>=}
+(a:as) >>= h ++ ys >>= h
+ok
+
+Luego vale el lema 1 y por consecuencia propiedad3
+-}  
+
+
+----------------------------- Ejercicio 9 ------------------------------
+
+data Expr a = Var a 
+            | Num Int 
+            | Add (Expr a) (Expr a)
+            | Mul (Expr a) (Expr a)
+            deriving Show
+
+instance Functor Expr where
+  fmap = liftM
+
+instance Applicative Expr where
+  pure a = Var a
+  (<*>) = ap
+
+instance Monad Expr where
+  Num n    >>= _ = Num n
+  Var a    >>= f = f a
+  Add e e' >>= f = Add (e >>= f) (e' >>= f)
+  Mul e e' >>= f = Mul (e >>= f) (e' >>= f)
+
+{-
+pure a >>= f
+= {def pure}
+Var a >>= f
+= {def >>=}
+f a
+ok
+
+1) 
+Num a >>= pure
+= {def >>=}
+Num a
+2)
+Var a >>= pure
+= {def >>=}
+pure a
+= {def pure}
+Var a
+3)
+Suponemos que vale la propiedad para e y e'
+
+exp e e' >>= pure
+= {def >>=}
+exp (e >>= pure) (e' >>= pure)
+= {HI}
+exp e e'
+
+De 1 2 y 3 vale la propiedad 2 de monadas
+
+4)
+Num n >>= (\x -> f x >>= g)
+= {def >>=}
+Num n
+= {def >>=}
+Num n >>= g
+= {def >>=}
+(Num n >>= f) >>= g
+5)
+Var a >>= (\x -> f x >>= g)
+= {def >>=}
+f a >>= g
+= {def >>=}
+(Var a >>= f) >>= g
+6)
+Suponemos que vale la propiedad para e y e'
+
+exp e e' >>= (\x -> f x >>= g)
+= {def exp}
+exp (e >>= (\x -> f x >>= g)) (e' >>= (\x -> f x >>= g))
+= {HI}
+exp ((e >>= f) >>= g) ((e' >>= f) >>= g)
+= {def >>=}
+exp (e >>= f) (e' >>= f) >>= g
+= {def >>=}
+(exp e e' >>= f) >>= g
+
+Luego, de 5 4 y 6 la propiedad 3 vale
+-}
+
+g :: String -> Expr Int
+g ('y':[]) = (Mul (Var 1) (Num 2))
+g ('x':[]) = (Var 1)
+g    _     = undefined
+
+{-
+  El operador >>= representa la sustitucion de variables de Expr a por
+  expresiones de tipo Expr b
+-}
+
+
+----------------------------- Ejercicio 10 ------------------------------
+bottom :: Void -> a
+bottom = undefined
+{-
+  \m
+  
+-}
+
