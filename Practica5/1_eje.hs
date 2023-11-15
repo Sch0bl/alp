@@ -672,10 +672,69 @@ g    _     = undefined
 
 
 ----------------------------- Ejercicio 10 ------------------------------
-bottom :: Void -> a
-bottom = undefined
 {-
-  \m
-  
+ (y >>= \z -> f z >>= \w -> pure (g w z)) 
+ >>= \x -> h x 3 >>= \y -> if y then return 7
+                           else (h x 2 >>= \z -> pure (k z))
+ 
 -}
 
+----------------------------- Ejercicio 11 ------------------------------
+{-
+  do y <- (do x <- m
+              pure h x)
+     z <- f y
+     pure g z
+-}
+
+----------------------------- Ejercicio 12 ------------------------------
+
+{-
+  ley 1, pure x >>= \y -> h y = h x 
+  do y <- pure x
+     h y
+  =
+  do h x 
+
+  ley 2, m >>=\y -> pure y = m
+  do y <- m
+     pure y
+  =
+  m
+
+  ley 3, m >>= (\x -> h x >>= \y -> k y) = (m >>= \x -> h x) >>= \y -> k y
+  do x <- m 
+     y <- h x
+     k y
+  =
+  do y <- (do x <- m
+              h x)
+     k y
+  preguntar
+-}
+
+----------------------------- Ejercicio 13 ------------------------------
+
+--  a) Se hizo en estructuras
+
+-- b)
+
+newtype Output w a = Out (a, [w])
+
+instance Functor (Output w) where
+  fmap = liftM
+
+
+instance Applicative (Output w) where
+    pure a = Out (a,[])
+    (<*>) = ap
+
+
+instance Monad (Output w) where
+  Out (a, xs) >>= f =
+    let Out (b, ys) = f a
+    in  Out (b, xs ++ ys)
+  
+{-
+  Ley 1. pure x >>= h = h x
+-}
