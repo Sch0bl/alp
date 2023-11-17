@@ -8,11 +8,11 @@ Functores
 --a)
 
 ----------------------------- Ejercicio 1 ------------------------------
-data Pair a = P (a,a)
+newtype Pair a = P (a,a)
 
 instance Functor Pair where
   --fmap :: (a -> b) -> Pair a -> Pair b
-    fmap f (P (a,a')) = P ((f a),(f a'))
+    fmap f (P (a,a')) = P (f a,f a')
 
 {-
 fmap id = id ?
@@ -184,7 +184,7 @@ fmap f (fmap g (Gen a xs))
 Luego, por extensionalidad tenemos que la igualdad vale .
 -}
 
-data Cont a = C ((a -> Int) -> Int)
+newtype Cont a = C ((a -> Int) -> Int)
 --Ejemplos
 
 ejje :: (Int -> Int) -> Int
@@ -230,7 +230,7 @@ fmap (f . g) (C h)
 ----------------------------- Ejercicio 2 ------------------------------
 
 
-data Func a = F (a -> a)
+newtype Func a = F (a -> a)
 
 instance Functor Func where
   fmap g (F f) = F id
@@ -263,8 +263,8 @@ Analogo al anterior, tomando z != y
 data MyEither e a = ML e | MR a 
 
 instance Functor (MyEither e) where
-  fmap f (ML e) = (ML e)
-  fmap f (MR a) = (MR (f a))
+  fmap f (ML e) = ML e
+  fmap f (MR a) = MR (f a)
 
 instance Applicative (MyEither e) where
   -- pure :: (a -> b) -> MyEither (a -> b)
@@ -286,7 +286,7 @@ instance Applicative ((->) r) where
 ----------------------------- Ejercicio 4 ------------------------------
 
 liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
-liftA2 op h i = (pure op) <*> h <*> i
+liftA2 op h i = op <$> h <*> i
 
 liftA5 :: Applicative f => (a -> b -> c -> d -> e -> k)
                            ->
@@ -297,15 +297,12 @@ liftA5 :: Applicative f => (a -> b -> c -> d -> e -> k)
                            f e ->
                            f k 
 liftA5 op fa fb fc fd fe = 
-  (pure op) <*> fa <*> fb <*> fc <*> fd <*> fe 
+  op <$> fa <*> fb <*> fc <*> fd <*> fe 
 
 ----------------------------- Ejercicio 5 ------------------------------
 
 sA :: Applicative f => [f a] -> f [a]
-sA [] = pure []
-sA (x:xs) = let fl = sA xs
-                   in (pure (:)) <*> x <*> fl 
-
+sA  = foldr (\x -> (<*>) ((:) <$> x)) (pure []) 
 ----------------------------- Ejercicio 6 ------------------------------
 {-
 Probar que todo monada es un functor, es decir proveer una instancia
@@ -361,19 +358,19 @@ instance Functor Id where
   fmap = liftM
 
 instance Applicative Id where
-  pure a = Id a
+  pure = Id
   (<*>) = ap
 --a)
 instance Monad Id where
   --return a = Id a 
 --(>>=) :: Id a -> (a -> Id b) -> Id b
-  (Id a) >>= f = (f a) 
+  (Id a) >>= f = f a 
 
 instance Monad (MyEither e) where
   --return = pure
 --(>>=) :: MyEither e a -> (a -> (MyEither e b)) -> MyEither e b
   ML e >>= _ = ML e
-  MR a >>= f = (f a)
+  MR a >>= f = f a
 
 --b)
 {-
@@ -467,14 +464,14 @@ instance Functor Lista where
   fmap = liftM
 
 instance Applicative Lista where
-  pure a = (L [a])
+  pure a = L [a]
   (<*>)  = ap 
 
 instance Monad Lista where
   L []     >>= f = L []
   L (a:as) >>= f = 
     let L bs = L as >>= f
-        L b  = (f a)
+        L b  = f a
     in  L (b ++ bs) 
 
 {-
@@ -581,7 +578,7 @@ Luego vale el lema 1 y por consecuencia propiedad3
 
 
 ----------------------------- Ejercicio 9 ------------------------------
-
+{-
 data Expr a = Var a 
             | Num Int 
             | Add (Expr a) (Expr a)
@@ -592,7 +589,7 @@ instance Functor Expr where
   fmap = liftM
 
 instance Applicative Expr where
-  pure a = Var a
+  pure = Var 
   (<*>) = ap
 
 instance Monad Expr where
@@ -661,8 +658,8 @@ Luego, de 5 4 y 6 la propiedad 3 vale
 -}
 
 g :: String -> Expr Int
-g ('y':[]) = (Mul (Var 1) (Num 2))
-g ('x':[]) = (Var 1)
+g ['y'] = Mul (Var 1) (Num 2)
+g ['x'] = Var 1
 g    _     = undefined
 
 {-
@@ -670,7 +667,7 @@ g    _     = undefined
   expresiones de tipo Expr b
 -}
 
-
+-}
 ----------------------------- Ejercicio 10 ------------------------------
 {-
  (y >>= \z -> f z >>= \w -> pure (g w z)) 
@@ -719,22 +716,140 @@ g    _     = undefined
 
 -- b)
 
-newtype Output w a = Out (a, [w])
+newtype Output w a = Out (a, w) deriving Show
 
-instance Functor (Output w) where
+instance Monoid w => Functor (Output w) where
   fmap = liftM
 
-
-instance Applicative (Output w) where
-    pure a = Out (a,[])
+instance Monoid w => Applicative (Output w) where
+    pure a = Out (a,mempty)
     (<*>) = ap
 
 
-instance Monad (Output w) where
+instance Monoid w => Monad (Output w) where
   Out (a, xs) >>= f =
     let Out (b, ys) = f a
-    in  Out (b, xs ++ ys)
+    in  Out (b, mappend xs ys)
   
 {-
   Ley 1. pure x >>= h = h x
+
+  pure a >>= h
+  = {def pure}
+  Out (a, mempty) >>= h
+  = {def >>=}
+  let Out (b, w) = h x
+  in Out (b, mappend mempty w)
+  = {w Monoid}
+  let Out (b,w) = h x
+  in Out (b,w)
+  = {def Let}
+  h x
+
+  Ley 2. Out (a, w) >>= pure = Out (a,w)
+
+  Out (a,w) >>= pure
+  = {def >>=}
+  let Out (b,w') = pure a
+  in  Out (b, mappend w w')
+  = {def pure}
+  Out (a, mappend w mepty)
+  = {w monoid}
+  Out (a, w)
+
+  Ley 3. Out (a, w) >>= (\a -> h a >>= k) = (Out (a,w) >>= h) >>= k
+
+  Out (a, w) >>= (\a -> h a >>= k)
+  = {def >>=}
+  let Out (d, v) = (h a >>= k)
+  in Out (c, mappend w v)
+  = {h a == Out (b, w'), and def >>=}
+  let Out (d, v) = (let Out (c, w'') = k b
+                      in  Out (c, mappend w' w''))
+  in Out (d, mappend w v)
+  where Out (b, w') = h a
+  = {def let}
+  let Out (d, v) = Out (c, mappend w' w'')
+  in Out (d, mappend w v)
+  where Out (b, w') = h a
+        Out (c, w'') = k b
+  = {def let}
+  Out (c, mappend w (mappend w' w''))
+  where Out (b, w') = h a
+        Out (c, w'') = k b
+  = {w monoid}
+  Out (c, mappend (mappend w w') w'')
+  where Out (b, w') = h a
+        Out (c, w'') = k b
+  = {def let }
+  let Out (c, w'') = k b
+  in Out (c, mappend (mappend w w') w'')
+  where Out (b, w') = h a
+  = {def bind}
+  Out (b, mappend w w') >>= k
+  where Out (b, w') = h a
+  = {def let}
+  (let (b, w') = h a
+   in (b, mappend w w')) >>= k
+  = {def bind}
+  (Out (a,w) >>= h) >>= k
 -}
+
+
+data Exp = Var String
+         | Lit Int
+         | Add Exp Exp
+        -- | Mul Exp Exp
+         | Div Exp Exp 
+         deriving Show
+
+write :: w -> Output w ()
+write w = Out ((), w)
+
+format :: Exp -> Int -> String
+format e n = "El termino (" ++ show e ++ ") tiene valor " ++ show n ++ "\n"
+
+eval4 :: Exp -> Output String Int
+eval4 l@(Lit n) = 
+  do write $ format l n 
+     return n
+
+eval4 l@(Add e1 e2) =
+  do n <- eval4 e1
+     m <- eval4 e2
+     let r = n + m
+     write $ format l r
+     return r
+
+eval4 l@(Div e1 e2) =
+  do n <- eval4 e1
+     m <- eval4 e2
+     let r = n `div` m
+     write $ format l r
+     return r
+
+myEval :: Exp -> IO ()
+myEval e =
+  do let Out (a,str) = eval4 e
+     putStr str
+     print a
+
+----------------------------- Ejercicio 14 ------------------------------
+seq :: Monad m => m a -> m b -> m b
+seq ma mb = ma >>= const mb
+
+{- El otro no tengo ni idea-}
+
+----------------------------- Ejercicio 15 ------------------------------
+myMapM :: Monad m => (a -> m b) -> [a] -> m [b]
+myMapM f [] = return []
+myMapM f (a:as) = 
+  do b <- f a 
+     bs <- myMapM f as
+     return (b:bs)
+
+myFoldM :: Monad m => (a -> b -> m a) -> a -> [b] -> m a
+myFoldM _ e [] = return e
+myFoldM op e (b:bs) =
+  do a <- myFoldM op e bs
+     op a b
