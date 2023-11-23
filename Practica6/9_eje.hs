@@ -78,6 +78,52 @@ instance Monad m => Monad (M m) where
     = {where}
     m
 
+    revisar
+    Ley 3. 
+    m >>= (\x -> k x >>= h) = (m >>= k) >>= h
+
+    m >>= (\x -> k x >>= h)
+    = {def bind and getM}
+    Mk ( mon >>= \case
+         Nothing -> return Nothing
+         Just a  -> getM (k x >>= h))
+    where Mk mon = getM m
+
+    case Nothing
+
+    Mk ( return Nothing )
+    = {def bid and case}
+    Mk ( getM (m >>= k) >>= \case
+            Nothing -> return Nothing
+            Just a  -> getM (h a))
+    = {def bind}
+    (m >>= k) >>= h ok
+
+    case Just a
+
+    Mk ( mon >>= (\Just a -> getM (k a) >>= h)))
+    = {def >>=}
+    mk ( mon >>= (\Just a -> 
+                  getM ( Mk $ getM (k a) >>= \case
+                          Nothing -> return Nothing
+                          Just b -> getM (h b))))
+    = {def getM}
+    Mk $ mon >>= (\Just a -> getM (k a) >>= \case
+                    Nothing -> return Nothing
+                    Just b -> get M (h b))
+    = {m Monad}
+    Mk $ (getM m >>= \Just a -> getM (k a))) >>= \case
+                  Nothing -> return Nothing
+                  Just b -> getM (h b))
+    = {def bind}
+    Mk $ getM (m >>= k) >>= \case 
+                Nothing -> return Nothing
+                Just b -> getM (h b))
+    = {def bind}
+    (m >>= k) >>= h
+
+
+
 -}
 
 throw :: Monad m => M m a
