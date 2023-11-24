@@ -14,15 +14,15 @@ one :: Nat
 one = Nat $ \f z -> f z
 
 suc :: Nat -> Nat
-suc n = Nat $ \f z -> f $ runNat n f z 
+suc n = Nat $ \f z -> f $ runNat n f z
 
 sumN :: Nat -> Nat -> Nat
 sumN n1 = runNat n1 suc
 
 double:: forall a. (a -> a) -> a -> a
-double f x = f $ f x   
+double f x = f $ f x
 
-newtype MyBool = MyBool {runBool :: forall a . a -> a -> a} 
+newtype MyBool = MyBool {runBool :: forall a . a -> a -> a}
 
 t :: MyBool
 t = MyBool const
@@ -33,22 +33,31 @@ f = MyBool $ \x y -> y
 myAnd :: MyBool -> MyBool -> MyBool
 myAnd b1 b2 = MyBool $ \x y -> runBool b1 (runBool b2 x y) y
 
-newtype PairNat = PN {runPN :: forall a. (Nat -> Nat -> a) -> a}
+newtype Pair b c = P {runP :: forall a. (b -> c -> a) -> a}
 
-pairNat :: Nat -> Nat -> PairNat
-pairNat n1 n2 = PN $ \f -> f n1 n2
+pairP ::forall a b. a -> b -> Pair a b
+pairP a b = P $ \op -> op a b
 
-firstNat :: PairNat -> Nat
-firstNat p = runPN p const
+fstP ::forall a b. Pair a b -> a
+fstP p = runP p const
 
-secondNat :: PairNat -> Nat
-secondNat p = runPN p (\x y -> y)
+sndP ::forall a b. Pair a b -> b
+sndP p = runP p (\x y -> y)
 
-pred' :: Nat -> PairNat
+pairNat :: Nat -> Nat -> Pair Nat Nat
+pairNat n1 n2 = P $ \f -> f n1 n2
+
+firstNat :: Pair Nat Nat -> Nat
+firstNat p = runP p const
+
+secondNat :: Pair Nat Nat -> Nat
+secondNat p = runP p (\x y -> y)
+
+pred' :: Nat -> Pair Nat Nat
 pred' n = runNat n shiftAdd $ pairNat zero zero
 
-shiftAdd :: PairNat -> PairNat
-shiftAdd p = runPN p (\n1 n2 -> pairNat (suc n1) n1)
+shiftAdd :: Pair Nat Nat -> Pair Nat Nat
+shiftAdd p = runP p (\n1 n2 -> pairNat (suc n1) n1)
 
 predNat :: Nat -> Nat
 predNat n = secondNat $ pred' n
@@ -76,18 +85,33 @@ reverseL l = runList l (\h tl -> appendL tl (cons h nil)) nil
 singleton :: forall a . a -> List a
 singleton a = cons a nil
 
+headTail :: forall a . List a -> Pair (List a) (List a)
+headTail l = runList l (\a r -> pairP (appendL (singleton a) (fstP r)) (sndP r)) (pairP nil nil)
+
+headL :: forall a. List a -> List a
+headL l = fstP $ headTail l -- fstP headTail
+
+tailL :: forall a. List a -> List a
+tailL l = sndP $ headTail l
+
 sumL :: List Nat -> Nat
 sumL l = runList l sumN zero
 
+
+
 insert :: forall a. (a -> a -> MyBool) -> List a -> a -> List a
-insert cmp l a = 
-    runList l (\b r -> runBool (cmp b a) (singleton b) (cons a (singleton b))) 
-        nil
+insert cmp l a =
+    runList l (\b r -> runBool (cmp b ) (singleton b) (cons a (singleton b)))
+        (singleton a)
 
 --terminar
 insertFold :: forall a. (a -> a -> MyBool) -> a -> a -> List a -> List a
-insertFold cmp a b r = undefined 
-    
+insertFold cmp a b r = undefined
+
    -- let bool = cmp b a
                            --f = runBool bool
                         --in f (append a)
+
+ins :: Ord a => a -> [a] -> [a]
+ins a = foldr f [a]
+    where f a l@(b:xs) = if a < b then a : l else b : (a: xs)
