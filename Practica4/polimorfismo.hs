@@ -98,20 +98,14 @@ sumL :: List Nat -> Nat
 sumL l = runList l sumN zero
 
 
+headLL :: forall a. List a -> a -> a
+headLL l b = runList l (\a r -> a) b
 
 insert :: forall a. (a -> a -> MyBool) -> List a -> a -> List a
 insert cmp l a =
-    runList l (\b r -> runBool (cmp b ) (singleton b) (cons a (singleton b)))
-        (singleton a)
-
---terminar
-insertFold :: forall a. (a -> a -> MyBool) -> a -> a -> List a -> List a
-insertFold cmp a b r = undefined
-
-   -- let bool = cmp b a
-                           --f = runBool bool
-                        --in f (append a)
-
-ins :: Ord a => a -> [a] -> [a]
-ins a = foldr f [a]
-    where f a l@(b:xs) = if a < b then a : l else b : (a: xs)
+    runList l
+    (\b r ->
+       runBool (cmp b (headLL r b))
+       (cons b r)
+       (cons (headLL r b) (cons b (tailL r))))
+    (singleton a)
